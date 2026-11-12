@@ -18,8 +18,8 @@ jobs:
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:55321
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: build-sem-banco
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -33,8 +33,8 @@ jobs:
     name: Testes de integração e de sistema (Supabase local)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
