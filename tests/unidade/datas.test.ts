@@ -6,6 +6,7 @@ import {
   ehHora,
   ehMes,
   hoje,
+  nomeDia,
   nomeMes,
   segundaDaSemana,
   somaDias,
@@ -88,6 +89,8 @@ describe("validação de texto de data", () => {
 describe("formatação", () => {
   it("formata em português", () => {
     expect(diaCurto("2026-11-05")).toBe("05/11")
-    expect(nomeMes("2026-11")).toBe("novembro de 2026")
+    expect(nomeMes("2026-11")).toBe("Novembro de 2026")
+    expect(nomeMes("2026-11", true)).toBe("Nov/26")
+    expect(nomeDia("2026-11-09")).toBe("Segunda-feira, 09/11")
   })
 })

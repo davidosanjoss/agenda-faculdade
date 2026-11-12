@@ -90,3 +90,61 @@ export function validarServico(d: { nome: string; valor: string | number }): Val
 
 /** Escapa os curingas do ILIKE (% e _) para buscar um nome exato. */
 export const escaparIlike = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`)
+
+// ---------------------------------------------------------------- Avaliações (PIT II, Situação 3)
+
+export const MAX_PRINTS = 5
+export const TAMANHO_MAXIMO_PRINT = 5 * 1024 * 1024
+export const TIPOS_PRINT = ["image/png", "image/jpeg", "image/webp"]
+export const SITUACOES_FEEDBACK = ["pendente", "corrigido", "nao_procede"] as const
+export type SituacaoFeedback = (typeof SITUACOES_FEEDBACK)[number]
+
+export type DadosFeedback = {
+  testador: string
+  dataTeste: string
+  funcionou?: string
+  naoFuncionou?: string
+  naoTestado?: string
+  sugestoes?: string
+  prints?: string[]
+  navegador?: string
+}
+
+export function validarFeedback(d: DadosFeedback, userId: string): Validado<{
+  testador: string
+  data_teste: string
+  funcionou: string | null
+  nao_funcionou: string | null
+  nao_testado: string | null
+  sugestoes: string | null
+  prints: string[]
+  navegador: string | null
+}> {
+  const testador = limpa(d.testador)
+  const textos = {
+    funcionou: opcional(d.funcionou),
+    nao_funcionou: opcional(d.naoFuncionou),
+    nao_testado: opcional(d.naoTestado),
+    sugestoes: opcional(d.sugestoes),
+  }
+  const prints = d.prints ?? []
+  if (!testador) return { ok: false, erro: "Informe seu nome." }
+  if (!ehData(d.dataTeste)) return { ok: false, erro: "Data do teste inválida." }
+  if (!Object.values(textos).some(Boolean)) return { ok: false, erro: "Descreva pelo menos um item do teste." }
+  if (prints.length > MAX_PRINTS) return { ok: false, erro: `Envie no máximo ${MAX_PRINTS} prints.` }
+  if (prints.some((p) => !p.startsWith(`${userId}/`) || p.includes(".."))) return { ok: false, erro: "Print inválido." }
+  return {
+    ok: true,
+    dados: { testador, data_teste: d.dataTeste, ...textos, prints, navegador: opcional(d.navegador)?.slice(0, 300) ?? null },
+  }
+}
+
+/** Confere tipo e tamanho de um print antes do envio. Devolve a mensagem de erro, ou null. */
+export function problemaNoPrint(arquivo: { name: string; type: string; size: number }) {
+  if (!TIPOS_PRINT.includes(arquivo.type)) return `${arquivo.name}: envie imagens PNG, JPG ou WEBP.`
+  if (arquivo.size > TAMANHO_MAXIMO_PRINT) return `${arquivo.name}: a imagem passa de 5 MB.`
+  return null
+}
+
+export const situacaoFeedbackValida = (s: string): s is SituacaoFeedback =>
+  (SITUACOES_FEEDBACK as readonly string[]).includes(s)

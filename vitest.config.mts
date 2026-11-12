@@ -1,4 +1,5 @@
 import { fileURLToPath } from "node:url"
+import { loadEnv } from "vite"
 import { defineConfig } from "vitest/config"
 
 const alias = { "@": fileURLToPath(new URL("./src", import.meta.url)) }
@@ -7,6 +8,8 @@ export default defineConfig({
   resolve: { alias },
   oxc: { jsx: { runtime: "automatic" } },
   test: {
+    // .env, .env.local etc. (as chaves do Supabase local para os testes de integração)
+    env: loadEnv("test", process.cwd(), ""),
     projects: [
       {
         extends: true,

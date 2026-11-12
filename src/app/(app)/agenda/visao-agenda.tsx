@@ -77,7 +77,7 @@ export function VisaoAgenda({ hoje, inicio, agendamentos, pendentes, clientes, s
         return (
           <Card key={dia} size="sm" className={cn(dia === hoje && "ring-2 ring-primary/60")}>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className={cn("text-sm capitalize", dia === hoje && "text-primary")}>
+              <CardTitle className={cn("text-sm", dia === hoje && "text-primary")}>
                 {nomeDia(dia)} {dia === hoje && <Badge className="ml-1">hoje</Badge>}
               </CardTitle>
               <span className="text-sm text-muted-foreground">{doDia.length ? brl(soma) : ""}</span>
@@ -154,7 +154,7 @@ export function LinhaAgendamento({
   return (
     <div
       className={cn(
-        "grid grid-cols-[3.5rem_1fr_auto] items-center gap-x-3 gap-y-1 border-t px-4 py-2.5 first:border-t-0",
+        "grid grid-cols-[3.5rem_1fr] items-center gap-x-3 gap-y-1.5 border-t px-4 py-2.5 first:border-t-0 sm:grid-cols-[3.5rem_1fr_auto]",
         pendente && "shadow-[inset_3px_0_0_var(--color-amber-500)]",
         salvando && "opacity-60",
       )}
@@ -165,11 +165,12 @@ export function LinhaAgendamento({
       </button>
       <button type="button" onClick={aoAbrir} className={cn("min-w-0 text-left", riscado && "line-through opacity-60")}>
         <span className="block truncate font-medium">{a.cliente_nome}</span>
-        <span className="block truncate text-sm text-muted-foreground">
-          {a.servico} · {brl(a.valor)}
+        <span className="flex min-w-0 gap-1 text-sm text-muted-foreground">
+          <span className="truncate">{a.servico}</span>
+          <span className="shrink-0">· {brl(a.valor)}</span>
         </span>
       </button>
-      <div className="flex items-center gap-1">
+      <div className="col-start-2 flex items-center gap-1 sm:col-start-auto">
         {whats && (
           <a
             href={whats}

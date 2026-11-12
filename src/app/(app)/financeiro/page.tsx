@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { ehMes, hoje, nomeMes, somaMeses } from "@/lib/datas"
 import { brl } from "@/lib/formato"
-import { rankingServicos, resumirPorMes, variacao, type LinhaFinanceira } from "@/lib/financeiro"
+import { realizadoAteODia, rankingServicos, resumirPorMes, variacao, type LinhaFinanceira } from "@/lib/financeiro"
 import { createClient } from "@/lib/supabase/server"
 import { cn } from "@/lib/utils"
 import { GraficoMeses, type PontoMes } from "./grafico-meses"
@@ -30,6 +30,11 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/financeiro
   const porMes = resumirPorMes(linhas, meses)
   const atual = porMes[5]
   const anterior = porMes[4]
+  // No mês corrente, o realizado é comparado com o mesmo período do mês anterior.
+  const parcial = mes === mesAtual
+  const realizadoAnterior = parcial
+    ? realizadoAteODia(linhas.filter((l) => l.data.startsWith(anterior.mes)), Number(hj.slice(8, 10)))
+    : anterior.realizado
   const doMes = linhas.filter((l) => l.data.startsWith(mes))
   const pendentes = doMes.filter((l) => l.status === "agendado" && l.data < hj).length
 
@@ -49,7 +54,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/financeiro
         <Link href={`/financeiro?mes=${somaMeses(mes, -1)}`} className={buttonVariants({ variant: "outline", size: "icon" })} aria-label="Mês anterior">
           <ChevronLeft />
         </Link>
-        <h1 className="min-w-40 text-center font-semibold capitalize">{nomeMes(mes)}</h1>
+        <h1 className="min-w-40 text-center font-semibold">{nomeMes(mes)}</h1>
         <Link href={`/financeiro?mes=${somaMeses(mes, 1)}`} className={buttonVariants({ variant: "outline", size: "icon" })} aria-label="Próximo mês">
           <ChevronRight />
         </Link>
@@ -64,7 +69,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/financeiro
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Indicador titulo={`Previsão de ${titulo}`} valor={brl(atual.previsto)} atual={atual.previsto} anterior={anterior.previsto} dica="realizado + agendado" />
-        <Indicador titulo="Já realizado" valor={brl(atual.realizado)} atual={atual.realizado} anterior={anterior.realizado} />
+        <Indicador titulo="Já realizado" valor={brl(atual.realizado)} atual={atual.realizado} anterior={realizadoAnterior} comparacao={parcial ? `até o dia ${Number(hj.slice(8, 10))} do mês anterior` : undefined} />
         <Indicador titulo="Ainda a receber" valor={brl(atual.aReceber)} dica="agendados ainda não realizados" />
         <Indicador titulo="Perdido (faltas/cancel.)" valor={brl(atual.perdido)} dica={`${atual.faltas} falta(s)`} />
         <Indicador titulo="Atendimentos" valor={String(atual.atendimentos)} atual={atual.atendimentos} anterior={anterior.atendimentos} />
@@ -111,7 +116,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/financeiro
                 const ant = lista[i + 1]
                 return (
                   <TableRow key={p.mes}>
-                    <TableCell className="pl-4 capitalize">{nomeMes(p.mes)}</TableCell>
+                    <TableCell className="pl-4">{nomeMes(p.mes)}</TableCell>
                     <TableCell className="text-right tabular-nums">{brl(p.previsto)}</TableCell>
                     <TableCell className="text-right tabular-nums">{brl(p.realizado)}</TableCell>
                     <TableCell className="text-right text-muted-foreground tabular-nums">{brl(p.perdido)}</TableCell>
@@ -165,23 +170,25 @@ function Indicador({
   atual,
   anterior,
   dica,
+  comparacao = "mês anterior",
 }: {
   titulo: string
   valor: string
   atual?: number
   anterior?: number
   dica?: string
+  comparacao?: string
 }) {
   return (
     <Card size="sm">
       <CardHeader>
         <CardDescription>{titulo}</CardDescription>
-        <CardTitle className="text-xl tabular-nums">{valor}</CardTitle>
+        <p className="text-2xl font-semibold tracking-tight tabular-nums">{valor}</p>
       </CardHeader>
       <CardContent className="text-xs text-muted-foreground">
         {atual !== undefined && anterior !== undefined ? (
           <>
-            <Variacao pct={variacao(atual, anterior)} /> vs. mês anterior
+            <Variacao pct={variacao(atual, anterior)} /> vs. {comparacao}
           </>
         ) : (
           dica

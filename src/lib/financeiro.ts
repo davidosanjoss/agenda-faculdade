@@ -50,6 +50,17 @@ export function rankingServicos(linhas: LinhaFinanceira[]) {
   return [...grupos.values()].sort((a, b) => b.total - a.total || a.nome.localeCompare(b.nome))
 }
 
+/**
+ * Realizado do mês anterior até o mesmo dia do mês (ex.: 1 a 12/10 quando hoje é 12/11).
+ * Comparar meio mês com o mês anterior inteiro sempre mostraria queda.
+ * Meses curtos: o dia 31 vira o último dia do mês anterior.
+ */
+export function realizadoAteODia(linhasMesAnterior: LinhaFinanceira[], dia: number) {
+  return linhasMesAnterior
+    .filter((l) => l.status === "realizado" && Number(l.data.slice(8, 10)) <= dia)
+    .reduce((t, l) => t + Number(l.valor), 0)
+}
+
 /** Variação percentual; null quando não há base de comparação (mês anterior zerado). */
 export function variacao(atual: number, anterior: number) {
   if (anterior === 0) return atual === 0 ? 0 : null

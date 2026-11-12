@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { entraNaPrevisao, rankingServicos, resumir, resumirPorMes, variacao, type LinhaFinanceira } from "@/lib/financeiro"
+import { entraNaPrevisao, rankingServicos, realizadoAteODia, resumir, resumirPorMes, variacao, type LinhaFinanceira } from "@/lib/financeiro"
 
 const linhas: LinhaFinanceira[] = [
   { data: "2026-10-05", valor: "50.00", status: "realizado", servico: "Corte" },
@@ -46,6 +46,20 @@ describe("rankingServicos()", () => {
       { nome: "Corte", qtd: 2, total: 140 },
       { nome: "Escova", qtd: 1, total: 60 },
     ])
+  })
+})
+
+describe("realizadoAteODia()", () => {
+  const outubro: LinhaFinanceira[] = [
+    { data: "2026-10-05", valor: 50, status: "realizado", servico: "Corte" },
+    { data: "2026-10-12", valor: 30, status: "realizado", servico: "Corte" },
+    { data: "2026-10-13", valor: 99, status: "realizado", servico: "Corte" },
+    { data: "2026-10-02", valor: 70, status: "faltou", servico: "Corte" },
+  ]
+  it("soma só o realizado até o mesmo dia do mês", () => {
+    expect(realizadoAteODia(outubro, 12)).toBe(80)
+    expect(realizadoAteODia(outubro, 31)).toBe(179)
+    expect(realizadoAteODia(outubro, 1)).toBe(0)
   })
 })
 

@@ -14,7 +14,7 @@ async function EmailUsuario() {
 export default function AppLayout({ children }: LayoutProps<"/">) {
   return (
     <>
-      <header className="sticky top-0 z-30 border-b bg-background/90 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b bg-background/90 backdrop-blur print:hidden">
         <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-2.5">
           <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <CalendarDays className="size-4" />
@@ -33,7 +33,7 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
         </div>
         <Navegacao />
       </header>
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-5">
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-5 print:max-w-none print:p-0">
         {children}
       </main>
     </>

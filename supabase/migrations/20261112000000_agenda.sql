@@ -40,6 +40,7 @@ create index agendamentos_cliente_idx on public.agendamentos (cliente_id);
 -- Só usuários logados acessam as tabelas; o RLS abaixo limita às linhas de cada um.
 revoke all on public.clientes, public.servicos, public.agendamentos from anon;
 grant select, insert, update, delete on public.clientes, public.servicos, public.agendamentos to authenticated;
+grant all on public.clientes, public.servicos, public.agendamentos to service_role;
 
 alter table public.clientes enable row level security;
 alter table public.servicos enable row level security;

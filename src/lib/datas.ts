@@ -36,17 +36,20 @@ export function somaMeses(ym: string, n: number) {
   return new Date(Date.UTC(y, m - 1 + n, 1)).toISOString().slice(0, 7)
 }
 
+/** "novembro de 2026" → "Novembro de 2026" (o CSS capitalize deixaria "De" maiúsculo). */
+export const primeiraMaiuscula = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+
 export function nomeMes(ym: string, curto = false) {
   const s = utc(`${ym}-01`).toLocaleDateString("pt-BR", {
     month: curto ? "short" : "long",
     year: curto ? "2-digit" : "numeric",
     timeZone: "UTC",
   })
-  return curto ? s.replace(". de ", "/").replace(" de ", "/") : s
+  return primeiraMaiuscula(curto ? s.replace(". de ", "/").replace(" de ", "/") : s)
 }
 
 export function nomeDia(iso: string) {
-  return utc(iso).toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "2-digit", timeZone: "UTC" })
+  return primeiraMaiuscula(utc(iso).toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "2-digit", timeZone: "UTC" }))
 }
 
 export function diaCurto(iso: string) {

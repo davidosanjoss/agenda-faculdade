@@ -9,7 +9,7 @@ import { nomeDia, nomeMes, somaMeses } from "@/lib/datas"
 import { brl } from "@/lib/formato"
 import { agruparPorDia, precisaDeBaixa, totalPrevisto, totalRealizado } from "@/lib/agenda"
 import { entraNaPrevisao } from "@/lib/financeiro"
-import type { Agendamento, Cliente, Servico, Status } from "@/lib/tipos"
+import { ROTULO_STATUS, type Agendamento, type Cliente, type Servico, type Status } from "@/lib/tipos"
 import { cn } from "@/lib/utils"
 import { AlternarVisao } from "./alternar-visao"
 import { DialogoAgendamento, rascunhoDe, rascunhoVazio, type Rascunho } from "./dialogo-agendamento"
@@ -59,7 +59,7 @@ export function VisaoMes({ hoje, mes, dias, agendamentos, pendentes, clientes, s
         <Link href={`/agenda?visao=mes&mes=${somaMeses(mes, 1)}`} className={buttonVariants({ variant: "outline", size: "icon" })} aria-label="Próximo mês">
           <ChevronRight />
         </Link>
-        <h1 className="ml-1 font-semibold capitalize">{nomeMes(mes)}</h1>
+        <h1 className="ml-1 font-semibold">{nomeMes(mes)}</h1>
         <AlternarVisao atual="mes" semana={selecionado} mes={mes} />
         <Button onClick={() => setRascunho(rascunhoVazio(selecionado))}>
           <Plus /> Agendar
@@ -159,9 +159,9 @@ export function VisaoMes({ hoje, mes, dias, agendamentos, pendentes, clientes, s
 
       <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
         {(["agendado", "realizado", "faltou", "cancelado"] as Status[]).map((s) => (
-          <span key={s} className="inline-flex items-center gap-1.5 capitalize">
+          <span key={s} className="inline-flex items-center gap-1.5">
             <span className={cn("size-2 rounded-full", COR[s])} />
-            {s}
+            {ROTULO_STATUS[s]}
           </span>
         ))}
         <span className="ml-auto hidden sm:inline">Clique duas vezes num dia para agendar.</span>
@@ -169,7 +169,7 @@ export function VisaoMes({ hoje, mes, dias, agendamentos, pendentes, clientes, s
 
       <Card size="sm">
         <CardHeader className="flex flex-row items-center justify-between gap-2">
-          <CardTitle className={cn("text-sm capitalize", selecionado === hoje && "text-primary")}>{nomeDia(selecionado)}</CardTitle>
+          <CardTitle className={cn("text-sm", selecionado === hoje && "text-primary")}>{nomeDia(selecionado)}</CardTitle>
           <div className="flex items-center gap-1">
             <span className="mr-2 text-sm text-muted-foreground">
               {doSelecionado.length ? brl(totalPrevisto(doSelecionado)) : ""}
