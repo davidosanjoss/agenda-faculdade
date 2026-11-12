@@ -1,139 +1,132 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
-import { ehData, ehHora } from "@/lib/datas"
-import { createClient } from "@/lib/supabase/server"
-import { STATUS, type Resultado, type Status } from "@/lib/tipos"
+// Controller (MVC): recebe as ações da tela, valida com as regras do domínio
+// (src/lib/validacao.ts) e grava no banco (Supabase/Postgres com RLS).
 
-const limpa = (s?: string | null) => (s ?? "").trim()
-const opcional = (s?: string | null) => limpa(s) || null
-/** Escapa curingas do ILIKE para buscar o nome exato sem diferenciar maiúsculas. */
-const exato = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`)
-const valorValido = (v: number) => Number.isFinite(v) && v >= 0 && v < 1_000_000
+import { revalidatePath } from "next/cache"
+import { createClient } from "@/lib/supabase/server"
+import type { DadosAgendamento, Resultado, Status } from "@/lib/tipos"
+import { escaparIlike, statusValido, validarAgendamento, validarCliente, validarServico } from "@/lib/validacao"
 
 function concluir(): Resultado {
   revalidatePath("/", "layout")
   return { ok: true }
 }
 
-export type DadosAgendamento = {
-  id?: string
-  data: string
-  hora: string
-  cliente: string
-  telefone?: string
-  email?: string
-  servico: string
-  valor: number
-  status: Status
-  obs?: string
+/** Traduz erros do banco para mensagens que o usuário entende. */
+function falha(error: { code?: string; message: string }): Resultado {
+  if (error.code === "23503") return { ok: false, erro: "Este cliente tem agendamentos. Exclua os agendamentos antes." }
+  if (error.code === "23514") return { ok: false, erro: "Algum campo tem um valor inválido." }
+  if (error.code === "42501" || error.code === "PGRST301") return { ok: false, erro: "Sua sessão expirou. Entre novamente." }
+  console.error("[acoes]", error)
+  return { ok: false, erro: "Não foi possível salvar agora. Tente de novo em instantes." }
 }
 
-export async function salvarAgendamento(d: DadosAgendamento): Promise<Resultado> {
-  const nome = limpa(d.cliente)
-  const servico = limpa(d.servico)
-  if (!ehData(d.data) || !ehHora(d.hora)) return { ok: false, erro: "Data ou hora inválida." }
-  if (!nome) return { ok: false, erro: "Informe o nome do cliente." }
-  if (!servico) return { ok: false, erro: "Informe o serviço." }
-  if (!valorValido(d.valor)) return { ok: false, erro: "Valor inválido." }
-  if (!STATUS.includes(d.status)) return { ok: false, erro: "Situação inválida." }
-
+export async function salvarAgendamento(entrada: DadosAgendamento): Promise<Resultado> {
+  const v = validarAgendamento(entrada)
+  if (!v.ok) return v
+  const d = v.dados
   const sb = await createClient()
-  const telefone = opcional(d.telefone)
-  const email = opcional(d.email)
 
-  // Cliente: reaproveita pelo nome; cria se for novo.
+  // Cliente: reaproveita pelo nome (sem diferenciar maiúsculas); cria se for novo.
   const { data: existente, error: e1 } = await sb
     .from("clientes")
     .select("id,telefone,email")
-    .ilike("nome", exato(nome))
+    .ilike("nome", escaparIlike(d.cliente))
     .limit(1)
     .maybeSingle()
-  if (e1) return { ok: false, erro: e1.message }
+  if (e1) return falha(e1)
 
   let clienteId = existente?.id as string | undefined
   if (existente) {
     const mudou: Record<string, string> = {}
-    if (telefone && telefone !== existente.telefone) mudou.telefone = telefone
-    if (email && email !== existente.email) mudou.email = email
-    if (Object.keys(mudou).length) await sb.from("clientes").update(mudou).eq("id", existente.id)
+    if (d.telefone && d.telefone !== existente.telefone) mudou.telefone = d.telefone
+    if (d.email && d.email !== existente.email) mudou.email = d.email
+    if (Object.keys(mudou).length) {
+      const { error } = await sb.from("clientes").update(mudou).eq("id", existente.id)
+      if (error) return falha(error)
+    }
   } else {
-    const { data: novo, error } = await sb.from("clientes").insert({ nome, telefone, email }).select("id").single()
-    if (error) return { ok: false, erro: error.message }
+    const { data: novo, error } = await sb
+      .from("clientes")
+      .insert({ nome: d.cliente, telefone: d.telefone, email: d.email })
+      .select("id")
+      .single()
+    if (error) return falha(error)
     clienteId = novo.id
   }
 
-  // Serviço novo entra no catálogo com o valor informado.
-  const { data: srv } = await sb.from("servicos").select("nome").ilike("nome", exato(servico)).limit(1).maybeSingle()
-  if (!srv) await sb.from("servicos").insert({ nome: servico, valor: d.valor })
+  // Serviço novo entra no catálogo; serviço existente mantém a grafia do catálogo.
+  const { data: srv, error: e2 } = await sb.from("servicos").select("nome").ilike("nome", escaparIlike(d.servico)).limit(1).maybeSingle()
+  if (e2) return falha(e2)
+  if (!srv) {
+    const { error } = await sb.from("servicos").insert({ nome: d.servico, valor: d.valor })
+    if (error) return falha(error)
+  }
 
   const linha = {
     cliente_id: clienteId,
-    servico: srv?.nome ?? servico, // mantém a grafia do catálogo
+    servico: srv?.nome ?? d.servico,
     valor: d.valor,
     data: d.data,
     hora: d.hora,
     status: d.status,
-    obs: opcional(d.obs),
+    obs: d.obs,
   }
   const { error } = d.id
     ? await sb.from("agendamentos").update(linha).eq("id", d.id)
     : await sb.from("agendamentos").insert(linha)
-  if (error) return { ok: false, erro: error.message }
+  if (error) return falha(error)
   return concluir()
 }
 
 export async function mudarStatus(id: string, status: Status): Promise<Resultado> {
-  if (!STATUS.includes(status)) return { ok: false, erro: "Situação inválida." }
+  if (!statusValido(status)) return { ok: false, erro: "Situação inválida." }
   const sb = await createClient()
   const { error } = await sb.from("agendamentos").update({ status }).eq("id", id)
-  if (error) return { ok: false, erro: error.message }
+  if (error) return falha(error)
   return concluir()
 }
 
 export async function excluirAgendamento(id: string): Promise<Resultado> {
   const sb = await createClient()
   const { error } = await sb.from("agendamentos").delete().eq("id", id)
-  if (error) return { ok: false, erro: error.message }
+  if (error) return falha(error)
   return concluir()
 }
 
-export async function salvarCliente(d: { id?: string; nome: string; telefone?: string; email?: string }): Promise<Resultado> {
-  const nome = limpa(d.nome)
-  if (!nome) return { ok: false, erro: "Informe o nome." }
-  const linha = { nome, telefone: opcional(d.telefone), email: opcional(d.email) }
+export async function salvarCliente(entrada: { id?: string; nome: string; telefone?: string; email?: string }): Promise<Resultado> {
+  const v = validarCliente(entrada)
+  if (!v.ok) return v
   const sb = await createClient()
-  const { error } = d.id
-    ? await sb.from("clientes").update(linha).eq("id", d.id)
-    : await sb.from("clientes").insert(linha)
-  if (error) return { ok: false, erro: error.message }
+  const { error } = entrada.id
+    ? await sb.from("clientes").update(v.dados).eq("id", entrada.id)
+    : await sb.from("clientes").insert(v.dados)
+  if (error) return falha(error)
   return concluir()
 }
 
 export async function excluirCliente(id: string): Promise<Resultado> {
   const sb = await createClient()
   const { error } = await sb.from("clientes").delete().eq("id", id)
-  if (error?.code === "23503")
-    return { ok: false, erro: "Este cliente tem agendamentos. Exclua os agendamentos antes." }
-  if (error) return { ok: false, erro: error.message }
+  if (error) return falha(error)
   return concluir()
 }
 
-export async function salvarServico(d: { id?: string; nome: string; valor: number }): Promise<Resultado> {
-  const nome = limpa(d.nome)
-  if (!nome) return { ok: false, erro: "Informe o nome do serviço." }
-  if (!valorValido(d.valor)) return { ok: false, erro: "Valor inválido." }
+export async function salvarServico(entrada: { id?: string; nome: string; valor: string | number }): Promise<Resultado> {
+  const v = validarServico(entrada)
+  if (!v.ok) return v
   const sb = await createClient()
-  const { error } = d.id
-    ? await sb.from("servicos").update({ nome, valor: d.valor }).eq("id", d.id)
-    : await sb.from("servicos").insert({ nome, valor: d.valor })
-  if (error) return { ok: false, erro: error.message }
+  const { error } = entrada.id
+    ? await sb.from("servicos").update(v.dados).eq("id", entrada.id)
+    : await sb.from("servicos").insert(v.dados)
+  if (error) return falha(error)
   return concluir()
 }
 
 export async function excluirServico(id: string): Promise<Resultado> {
   const sb = await createClient()
   const { error } = await sb.from("servicos").delete().eq("id", id)
-  if (error) return { ok: false, erro: error.message }
+  if (error) return falha(error)
   return concluir()
 }

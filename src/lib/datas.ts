@@ -8,7 +8,12 @@ const utc = (iso: string) => {
   return new Date(Date.UTC(y, m - 1, d ?? 1))
 }
 
-export const ehData = (s?: string): s is string => !!s && /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(utc(s).getTime())
+/** Data real no formato YYYY-MM-DD (rejeita 2026-02-30, 2026-13-01 etc.). */
+export const ehData = (s?: string): s is string => {
+  if (!s || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return false
+  const d = utc(s)
+  return !isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s
+}
 export const ehMes = (s?: string): s is string => !!s && /^\d{4}-(0[1-9]|1[0-2])$/.test(s)
 export const ehHora = (s?: string): s is string => !!s && /^([01]\d|2[0-3]):[0-5]\d$/.test(s)
 

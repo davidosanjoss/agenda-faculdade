@@ -23,6 +23,20 @@ export type Agendamento = {
   obs: string | null
 }
 
+/** Dados do formulário de agendamento, como chegam da tela. */
+export type DadosAgendamento = {
+  id?: string
+  data: string
+  hora: string
+  cliente: string
+  telefone?: string
+  email?: string
+  servico: string
+  valor: number | string
+  status: Status
+  obs?: string
+}
+
 export type Resultado = { ok: true } | { ok: false; erro: string }
 
 /** Converte a linha do Supabase (com o join em clientes) para Agendamento. */

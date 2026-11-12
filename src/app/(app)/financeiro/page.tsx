@@ -6,27 +6,11 @@ import { buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { ehMes, hoje, nomeMes, somaMeses } from "@/lib/datas"
-import { brl, variacao } from "@/lib/formato"
+import { brl } from "@/lib/formato"
+import { rankingServicos, resumirPorMes, variacao, type LinhaFinanceira } from "@/lib/financeiro"
 import { createClient } from "@/lib/supabase/server"
 import { cn } from "@/lib/utils"
 import { GraficoMeses, type PontoMes } from "./grafico-meses"
-
-type Linha = { data: string; valor: number | string; status: string; servico: string }
-
-function resumo(linhas: Linha[]) {
-  const soma = (...st: string[]) => linhas.filter((l) => st.includes(l.status)).reduce((t, l) => t + Number(l.valor), 0)
-  const realizados = linhas.filter((l) => l.status === "realizado").length
-  const realizado = soma("realizado")
-  return {
-    realizado,
-    aReceber: soma("agendado"),
-    previsto: soma("realizado", "agendado"),
-    perdido: soma("faltou", "cancelado"),
-    atendimentos: linhas.filter((l) => l.status === "realizado" || l.status === "agendado").length,
-    faltas: linhas.filter((l) => l.status === "faltou").length,
-    ticket: realizados ? realizado / realizados : 0,
-  }
-}
 
 async function Conteudo({ searchParams }: { searchParams: PageProps<"/financeiro">["searchParams"] }) {
   const sb = await createClient() // antes de hoje(): garante render por requisição
@@ -41,25 +25,15 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/financeiro
     .select("data,valor,status,servico")
     .gte("data", `${meses[0]}-01`)
     .lt("data", `${somaMeses(mes, 1)}-01`)
-  const linhas = (data ?? []) as Linha[]
+  const linhas = (data ?? []) as LinhaFinanceira[]
 
-  const porMes = meses.map((m) => ({ mes: m, ...resumo(linhas.filter((l) => l.data.startsWith(m))) }))
+  const porMes = resumirPorMes(linhas, meses)
   const atual = porMes[5]
   const anterior = porMes[4]
   const doMes = linhas.filter((l) => l.data.startsWith(mes))
   const pendentes = doMes.filter((l) => l.status === "agendado" && l.data < hj).length
 
-  const servicos = Object.values(
-    doMes
-      .filter((l) => l.status === "realizado" || l.status === "agendado")
-      .reduce<Record<string, { nome: string; qtd: number; total: number }>>((acc, l) => {
-        const k = l.servico.toLowerCase()
-        acc[k] ??= { nome: l.servico, qtd: 0, total: 0 }
-        acc[k].qtd++
-        acc[k].total += Number(l.valor)
-        return acc
-      }, {}),
-  ).sort((a, b) => b.total - a.total)
+  const servicos = rankingServicos(doMes)
 
   const pontos: PontoMes[] = porMes.map((p) => ({
     mes: nomeMes(p.mes, true),

@@ -7,6 +7,8 @@ import { Button, buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { nomeDia, nomeMes, somaMeses } from "@/lib/datas"
 import { brl } from "@/lib/formato"
+import { agruparPorDia, precisaDeBaixa, totalPrevisto, totalRealizado } from "@/lib/agenda"
+import { entraNaPrevisao } from "@/lib/financeiro"
 import type { Agendamento, Cliente, Servico, Status } from "@/lib/tipos"
 import { cn } from "@/lib/utils"
 import { AlternarVisao } from "./alternar-visao"
@@ -30,19 +32,18 @@ const COR: Record<Status, string> = {
   faltou: "bg-amber-500",
   cancelado: "bg-muted-foreground/40",
 }
-const conta = (a: Agendamento) => a.status === "agendado" || a.status === "realizado"
+const conta = (a: Agendamento) => entraNaPrevisao(a.status)
 const MAX_NA_CELULA = 3
 
 export function VisaoMes({ hoje, mes, dias, agendamentos, pendentes, clientes, servicos, erro }: Props) {
   const [rascunho, setRascunho] = useState<Rascunho | null>(null)
   const [selecionado, setSelecionado] = useState(hoje.startsWith(mes) ? hoje : `${mes}-01`)
 
-  const porDia = new Map<string, Agendamento[]>()
-  for (const a of agendamentos) porDia.set(a.data, [...(porDia.get(a.data) ?? []), a])
+  const porDia = agruparPorDia(agendamentos)
 
   const doMes = agendamentos.filter((a) => a.data.startsWith(mes))
-  const previsto = doMes.filter(conta).reduce((t, a) => t + a.valor, 0)
-  const realizado = doMes.filter((a) => a.status === "realizado").reduce((t, a) => t + a.valor, 0)
+  const previsto = totalPrevisto(doMes)
+  const realizado = totalRealizado(doMes)
   const doSelecionado = porDia.get(selecionado) ?? []
   const abrir = (a: Agendamento) => setRascunho(rascunhoDe(a, clientes))
 
@@ -87,7 +88,7 @@ export function VisaoMes({ hoje, mes, dias, agendamentos, pendentes, clientes, s
           {dias.map((dia, i) => {
             const lista = porDia.get(dia) ?? []
             const ativos = lista.filter(conta)
-            const total = ativos.reduce((t, a) => t + a.valor, 0)
+            const total = totalPrevisto(lista)
             const foraDoMes = !dia.startsWith(mes)
             const ehHoje = dia === hoje
             const ehSel = dia === selecionado
@@ -171,7 +172,7 @@ export function VisaoMes({ hoje, mes, dias, agendamentos, pendentes, clientes, s
           <CardTitle className={cn("text-sm capitalize", selecionado === hoje && "text-primary")}>{nomeDia(selecionado)}</CardTitle>
           <div className="flex items-center gap-1">
             <span className="mr-2 text-sm text-muted-foreground">
-              {doSelecionado.length ? brl(doSelecionado.filter(conta).reduce((t, a) => t + a.valor, 0)) : ""}
+              {doSelecionado.length ? brl(totalPrevisto(doSelecionado)) : ""}
             </span>
             <Button size="sm" variant="outline" onClick={() => setRascunho(rascunhoVazio(selecionado))}>
               <Plus /> Agendar
@@ -183,7 +184,7 @@ export function VisaoMes({ hoje, mes, dias, agendamentos, pendentes, clientes, s
             <p className="px-4 text-sm text-muted-foreground">Sem agendamentos neste dia.</p>
           ) : (
             doSelecionado.map((a) => (
-              <LinhaAgendamento key={a.id} a={a} aoAbrir={() => abrir(a)} pendente={a.status === "agendado" && a.data < hoje} />
+              <LinhaAgendamento key={a.id} a={a} aoAbrir={() => abrir(a)} pendente={precisaDeBaixa(a, hoje)} />
             ))
           )}
         </CardContent>

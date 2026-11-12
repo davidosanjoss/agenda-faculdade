@@ -27,7 +27,7 @@ export function ListaServicos({ servicos, erro }: { servicos: Servico[]; erro?: 
   function enviar(e: React.FormEvent) {
     e.preventDefault()
     iniciar(async () => {
-      const r = await salvarServico({ id, nome, valor: Number(valor.replace(",", ".")) })
+      const r = await salvarServico({ id, nome, valor })
       if (!r.ok) return void toast.error(r.erro)
       toast.success(id ? "Serviço atualizado." : "Serviço cadastrado.")
       limpar()
@@ -58,7 +58,7 @@ export function ListaServicos({ servicos, erro }: { servicos: Servico[]; erro?: 
             </div>
             <div className="grid w-36 gap-1.5">
               <Label htmlFor="srv-valor">Preço (R$)</Label>
-              <Input id="srv-valor" type="number" inputMode="decimal" step="0.01" min="0" value={valor} onChange={(e) => setValor(e.target.value)} required />
+              <Input id="srv-valor" inputMode="decimal" placeholder="0,00" value={valor} onChange={(e) => setValor(e.target.value)} required />
             </div>
             <Button type="submit" disabled={pendente}>
               {id ? "Salvar" : "Adicionar"}
@@ -100,7 +100,7 @@ export function ListaServicos({ servicos, erro }: { servicos: Servico[]; erro?: 
                         onClick={() => {
                           setId(s.id)
                           setNome(s.nome)
-                          setValor(String(s.valor))
+                          setValor(s.valor.toFixed(2).replace(".", ","))
                         }}
                       >
                         <Pencil />

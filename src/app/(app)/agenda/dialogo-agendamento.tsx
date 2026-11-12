@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { SelectStatus } from "@/components/select-status"
+import { buscarPorNome, encontrarConflito } from "@/lib/agenda"
 import type { Agendamento, Cliente, Servico, Status } from "@/lib/tipos"
 import { excluirAgendamento, salvarAgendamento } from "../acoes"
 
@@ -37,13 +38,11 @@ export function rascunhoDe(a: Agendamento, clientes: Cliente[]): Rascunho {
     telefone: c?.telefone ?? "",
     email: c?.email ?? "",
     servico: a.servico,
-    valor: String(a.valor),
+    valor: a.valor.toFixed(2).replace(".", ","),
     status: a.status,
     obs: a.obs ?? "",
   }
 }
-
-const igual = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase()
 
 export function DialogoAgendamento({
   rascunho,
@@ -93,13 +92,11 @@ function Formulario({
   const [pendente, iniciar] = useTransition()
   const muda = (campo: keyof Rascunho, valor: string) => setF((x) => ({ ...x, [campo]: valor }))
 
-  const clienteConhecido = clientes.find((c) => igual(c.nome, f.cliente))
-  const conflito = agendamentos.find(
-    (a) => a.id !== f.id && a.data === f.data && a.hora === f.hora && a.status !== "cancelado",
-  )
+  const clienteConhecido = buscarPorNome(clientes, f.cliente)
+  const conflito = encontrarConflito(agendamentos, f)
 
   function aoMudarCliente(nome: string) {
-    const c = clientes.find((x) => igual(x.nome, nome))
+    const c = buscarPorNome(clientes, nome)
     setF((x) => ({
       ...x,
       cliente: nome,
@@ -109,14 +106,14 @@ function Formulario({
   }
 
   function aoMudarServico(nome: string) {
-    const s = servicos.find((x) => igual(x.nome, nome))
-    setF((x) => ({ ...x, servico: nome, valor: s ? String(s.valor) : x.valor }))
+    const s = buscarPorNome(servicos, nome)
+    setF((x) => ({ ...x, servico: nome, valor: s ? s.valor.toFixed(2).replace(".", ",") : x.valor }))
   }
 
   function enviar(e: React.FormEvent) {
     e.preventDefault()
     iniciar(async () => {
-      const r = await salvarAgendamento({ ...f, valor: Number(f.valor.replace(",", ".")) })
+      const r = await salvarAgendamento(f)
       if (!r.ok) return void toast.error(r.erro)
       toast.success(f.id ? "Agendamento atualizado." : "Agendamento criado.")
       aoFechar()
@@ -185,10 +182,8 @@ function Formulario({
         <Campo rotulo="Valor (R$)" id="ag-valor">
           <Input
             id="ag-valor"
-            type="number"
             inputMode="decimal"
-            step="0.01"
-            min="0"
+            placeholder="0,00"
             value={f.valor}
             onChange={(e) => muda("valor", e.target.value)}
             required

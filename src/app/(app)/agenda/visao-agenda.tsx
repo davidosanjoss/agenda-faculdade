@@ -10,6 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { SelectStatus } from "@/components/select-status"
 import { diaCurto, nomeDia, somaDias } from "@/lib/datas"
 import { brl, linkWhatsApp } from "@/lib/formato"
+import { mensagemLembrete, precisaDeBaixa, totalPrevisto, totalRealizado } from "@/lib/agenda"
+import { entraNaPrevisao } from "@/lib/financeiro"
 import type { Agendamento, Cliente, Servico, Status } from "@/lib/tipos"
 import { cn } from "@/lib/utils"
 import { mudarStatus } from "../acoes"
@@ -26,14 +28,14 @@ type Props = {
   erro?: string
 }
 
-const conta = (a: Agendamento) => a.status === "agendado" || a.status === "realizado"
+const conta = (a: Agendamento) => entraNaPrevisao(a.status)
 
 export function VisaoAgenda({ hoje, inicio, agendamentos, pendentes, clientes, servicos, erro }: Props) {
   const [rascunho, setRascunho] = useState<Rascunho | null>(null)
   const dias = Array.from({ length: 7 }, (_, i) => somaDias(inicio, i))
   const ativos = agendamentos.filter(conta)
-  const previsto = ativos.reduce((t, a) => t + a.valor, 0)
-  const realizado = agendamentos.filter((a) => a.status === "realizado").reduce((t, a) => t + a.valor, 0)
+  const previsto = totalPrevisto(agendamentos)
+  const realizado = totalRealizado(agendamentos)
   const diaNovo = hoje >= inicio && hoje <= dias[6] ? hoje : inicio
 
   const abrir = (a: Agendamento) => setRascunho(rascunhoDe(a, clientes))
@@ -71,7 +73,7 @@ export function VisaoAgenda({ hoje, inicio, agendamentos, pendentes, clientes, s
 
       {dias.map((dia) => {
         const doDia = agendamentos.filter((a) => a.data === dia)
-        const soma = doDia.filter(conta).reduce((t, a) => t + a.valor, 0)
+        const soma = totalPrevisto(doDia)
         return (
           <Card key={dia} size="sm" className={cn(dia === hoje && "ring-2 ring-primary/60")}>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -90,7 +92,7 @@ export function VisaoAgenda({ hoje, inicio, agendamentos, pendentes, clientes, s
                   Sem agendamentos. Clique para agendar.
                 </button>
               ) : (
-                doDia.map((a) => <LinhaAgendamento key={a.id} a={a} aoAbrir={() => abrir(a)} pendente={a.status === "agendado" && a.data < hoje} />)
+                doDia.map((a) => <LinhaAgendamento key={a.id} a={a} aoAbrir={() => abrir(a)} pendente={precisaDeBaixa(a, hoje)} />)
               )}
             </CardContent>
           </Card>
@@ -140,10 +142,7 @@ export function LinhaAgendamento({
 }) {
   const [salvando, iniciar] = useTransition()
   const riscado = a.status === "cancelado" || a.status === "faltou"
-  const whats = linkWhatsApp(
-    a.cliente_telefone,
-    `Olá, ${a.cliente_nome.split(" ")[0]}! Passando para lembrar do seu horário de ${a.servico} no dia ${diaCurto(a.data)} às ${a.hora}.`,
-  )
+  const whats = linkWhatsApp(a.cliente_telefone, mensagemLembrete(a))
 
   function trocar(s: Status) {
     iniciar(async () => {
