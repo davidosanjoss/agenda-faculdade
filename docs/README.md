@@ -6,7 +6,7 @@ Projeto Integrador Transdisciplinar em Engenharia de Software II, também usado 
 
 | Documento | Conteúdo |
 |---|---|
-| [Escopo e requisitos](situacao-1-planejamento/01-escopo-e-requisitos.md) | Problema, público, requisitos funcionais e não funcionais, regras de negócio |
+| [Escopo e requisitos](situacao-1-planejamento/01-escopo-e-requisitos.md) | Revisão em relação ao PIT I, problema, público, requisitos funcionais e não funcionais, regras de negócio |
 | [Modelagem UML](situacao-1-planejamento/02-uml.md) | Casos de uso, classes, sequência, atividades, estados |
 | [IHC](situacao-1-planejamento/03-ihc.md) | Mapa de navegação, telas, princípios de usabilidade, catálogo de mensagens de erro |
 | [Projeto de dados](situacao-1-planejamento/04-dados.md) | Modelo conceitual, lógico normalizado, físico e dicionário de dados |

@@ -4,7 +4,7 @@
 
 **Sistema publicado:** https://agenda-mei.vercel.app
 
-Agenda e previsão de faturamento para profissionais autônomos de atendimento, como manicures, cabeleireiros e fisioterapeutas. É o projeto do **PIT II (Engenharia de Software)** e do projeto de extensão ligado ao **ODS 8, meta 8.3**: apoio a microempreendedores.
+Agenda e previsão de faturamento para profissionais autônomos de atendimento, como barbeiros, manicures, cabeleireiros e fisioterapeutas. É o projeto do **PIT II (Engenharia de Software)** e do projeto de extensão ligado ao **ODS 8, meta 8.3**: apoio a microempreendedores.
 
 ![Agenda do mês](docs/imagens/04-agenda-mes.png)
 

@@ -2,7 +2,7 @@
 
 ## Problema
 
-Profissionais autônomos de atendimento (manicures, cabeleireiros, fisioterapeutas, esteticistas), em geral registrados como MEI, costumam controlar horários em caderno ou no WhatsApp e não sabem **quanto vão receber no mês** nem se estão **faturando mais ou menos que nos meses anteriores**. Faltas de clientes não são registradas e o dinheiro perdido passa despercebido.
+Profissionais autônomos de atendimento (barbeiros, manicures, cabeleireiros, fisioterapeutas, esteticistas), em geral registrados como MEI, costumam controlar horários em caderno ou no WhatsApp e não sabem **quanto vão receber no mês** nem se estão **faturando mais ou menos que nos meses anteriores**. Faltas de clientes não são registradas e o dinheiro perdido passa despercebido.
 
 ## Objetivo
 
@@ -11,6 +11,22 @@ Oferecer um sistema web gratuito, simples e acessível pelo celular para:
 1. registrar os atendimentos (cliente, contato, serviço e valor);
 2. acompanhar a agenda da semana e do mês;
 3. mostrar a **previsão de faturamento** do mês e a **comparação com meses anteriores**.
+
+## Revisão em relação ao PIT I
+
+No PIT I, a proposta era uma **agenda para barbearia**. Na revisão para o PIT II, o escopo foi ampliado:
+
+| Aspecto | PIT I | PIT II (versão atual) |
+|---|---|---|
+| Público | Barbearia | Qualquer profissional autônomo com horário marcado ou encomendas: barbearias, salões, manicures, esteticistas, fisioterapeutas, ateliês |
+| Agenda | Marcação de horários | Agenda da semana e calendário do mês, situação de cada atendimento (agendado, realizado, faltou, cancelado), aviso de conflito de horário e destaque dos atendimentos sem baixa |
+| Financeiro | — | Painel com previsão do mês, realizado, a receber, perdido com faltas, ticket médio, comparação com o mês anterior e gráfico dos últimos 6 meses |
+| Cadastros | — | Clientes (histórico, total gasto, faltas) e catálogo de serviços com preço sugerido, cadastrados automaticamente ao agendar |
+| Comunicação | — | Lembrete pronto pelo WhatsApp |
+| Acesso | — | Login individual; cada profissional vê só os próprios dados |
+| Qualidade | — | Avaliação dos testadores com prints, laudo de qualidade e testes automatizados |
+
+**Motivo da ampliação:** a dor da barbearia (horários no caderno ou no WhatsApp, faltas não registradas e falta de visão do faturamento) se repete em outros negócios de atendimento. Generalizar o sistema permitiu atender a comunidade do projeto de extensão, um salão de beleza e um ateliê de papelaria, sem perder o caso original da barbearia.
 
 ## Público-alvo e partes interessadas
 
