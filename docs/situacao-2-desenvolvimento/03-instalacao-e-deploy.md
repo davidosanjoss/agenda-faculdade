@@ -58,8 +58,10 @@ pull request ──► Vercel: deploy de Preview com URL própria + CI
 2. **Vercel**: projeto importado do GitHub, com as variáveis `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. Não cadastre `SUPABASE_SECRET_KEY`.
 3. **GitHub**, em *Settings → Environments → producao*:
    - variable `SUPABASE_PROJECT_REF`: id do projeto Supabase
-   - secret `SUPABASE_ACCESS_TOKEN`: token criado em supabase.com → *Account → Access Tokens*
+   - variable `SUPABASE_POOLER_HOST`: host do *Session pooler* (*Connect → Session pooler*), por exemplo `aws-0-sa-east-1.pooler.supabase.com`
    - secret `SUPABASE_DB_PASSWORD`: senha do banco (*Project Settings → Database*)
+
+   O job conecta direto no banco pelo pooler (IPv4) e não usa a API de gerenciamento do Supabase, que fica restrita em organizações criadas pela integração da Vercel.
 4. Crie a sua conta no sistema publicado e torne-a administradora pelo **SQL Editor** do Supabase:
    ```sql
    insert into administradores select id from auth.users where email = 'seu@email.com';
