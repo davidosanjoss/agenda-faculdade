@@ -1,12 +1,12 @@
 # Roteiro para os testadores
 
-> Texto para enviar aos 5 colegas. Troque `<LINK>` pelo endereço publicado na Vercel.
+> Texto para enviar aos 5 colegas.
 
 ---
 
 Olá! Estou desenvolvendo o **Agenda MEI**, um sistema de agenda e previsão de faturamento para profissionais autônomos (manicures, cabeleireiros, fisioterapeutas). Preciso que você teste o sistema como se fosse um desses profissionais e me conte o que achou. Leva uns 15 minutos.
 
-**Endereço:** `<LINK>`
+**Endereço:** `https://agenda-mei.vercel.app`
 
 ### 1. Crie sua conta
 Clique em **Ainda não tenho conta**, use seu e-mail e confirme pelo link que chegar (veja também o spam).

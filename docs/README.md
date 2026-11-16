@@ -39,5 +39,5 @@ Projeto Integrador Transdisciplinar em Engenharia de Software II, também usado 
 | Hospedagem | Vercel + Supabase |
 | Plataforma | Web responsiva |
 | Modo de codificação | Tradicional |
-| Link da solução em funcionamento | *(preencher após o deploy)* |
+| Link da solução em funcionamento | https://agenda-mei.vercel.app |
 | Link do vídeo narrado | *(preencher)* |
