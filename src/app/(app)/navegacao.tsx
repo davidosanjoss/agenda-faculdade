@@ -23,7 +23,7 @@ export function Navegacao() {
             key={i.href}
             href={i.href}
             className={cn(
-              "border-b-2 px-2.5 py-2 text-sm whitespace-nowrap transition-colors sm:px-3",
+              "border-b-2 px-2.5 py-2 text-sm whitespace-nowrap transition-colors max-[374px]:px-1.5 max-[374px]:text-xs sm:px-3",
               ativo
                 ? "border-primary font-medium text-foreground"
                 : "border-transparent text-muted-foreground hover:text-foreground",

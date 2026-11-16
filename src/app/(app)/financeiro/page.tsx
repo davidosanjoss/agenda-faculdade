@@ -116,7 +116,10 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/financeiro
                 const ant = lista[i + 1]
                 return (
                   <TableRow key={p.mes}>
-                    <TableCell className="pl-4">{nomeMes(p.mes)}</TableCell>
+                    <TableCell className="pl-4">
+                      <span className="sm:hidden">{nomeMes(p.mes, true)}</span>
+                      <span className="max-sm:hidden">{nomeMes(p.mes)}</span>
+                    </TableCell>
                     <TableCell className="text-right tabular-nums">{brl(p.previsto)}</TableCell>
                     <TableCell className="text-right tabular-nums">{brl(p.realizado)}</TableCell>
                     <TableCell className="text-right text-muted-foreground tabular-nums">{brl(p.perdido)}</TableCell>
@@ -180,10 +183,13 @@ function Indicador({
   comparacao?: string
 }) {
   return (
-    <Card size="sm">
+    <Card size="sm" className="@container">
       <CardHeader>
         <CardDescription>{titulo}</CardDescription>
-        <p className="text-2xl font-semibold tracking-tight tabular-nums">{valor}</p>
+        {/* Diminui com a largura do card para caber "R$ 12.345,67" mesmo em celular de 320px. */}
+        <p className="text-[clamp(1rem,calc((100cqi_-_1.5rem)/6),1.5rem)] font-semibold tracking-tight whitespace-nowrap tabular-nums">
+          {valor}
+        </p>
       </CardHeader>
       <CardContent className="text-xs text-muted-foreground">
         {atual !== undefined && anterior !== undefined ? (
