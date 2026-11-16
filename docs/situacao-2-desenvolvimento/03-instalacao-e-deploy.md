@@ -31,23 +31,36 @@ docker exec supabase_db_agenda-mei psql -U postgres -c \
   "insert into administradores select id from auth.users where email = 'demo@agenda.local'"
 ```
 
-## Publicar (Supabase + Vercel)
+## Publicação e versionamento dos deploys
 
-1. Crie um projeto em [supabase.com](https://supabase.com) (plano gratuito) e aplique as migrations:
-   ```bash
-   supabase link --project-ref <ref-do-projeto>
-   supabase db push
-   ```
-2. Em **Authentication → URL Configuration**, configure:
-   - **Site URL**: `https://<seu-app>.vercel.app`
-   - **Redirect URLs**: `https://<seu-app>.vercel.app/auth/callback`
-3. Na [Vercel](https://vercel.com), importe o repositório do GitHub e cadastre as variáveis:
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+Produção: https://agenda-mei.vercel.app, com o Supabase `agenda-mei` (região São Paulo) e o projeto `agenda-mei` da Vercel ligado ao repositório do GitHub.
 
-   Não cadastre `SUPABASE_SECRET_KEY` na Vercel: a aplicação não precisa dela.
-4. Faça o deploy. A cada push na `main`, a Vercel publica uma nova versão.
-5. Crie a sua conta no sistema publicado e torne-a administradora pelo **SQL Editor** do Supabase:
+Cada versão publicada corresponde a um commit na `main`:
+
+```
+push na main ──► GitHub Actions (CI)
+                  ├─ qualidade: lint, tipos, testes de unidade, build
+                  ├─ integracao-e-sistema: Supabase local, integração, Playwright
+                  └─ migrations-producao (só se os dois passarem): supabase db push
+             └──► Vercel: build e publicação do commit (Production)
+pull request ──► Vercel: deploy de Preview com URL própria + CI
+```
+
+- **Aplicação**: a Vercel cria um deploy imutável por commit. O histórico fica em *Deployments*, e qualquer versão anterior pode voltar a ser a de produção com *Instant Rollback*.
+- **Banco**: cada mudança de esquema é um arquivo em `supabase/migrations/` (versionado no Git). O job `migrations-producao` aplica só as migrations novas, registradas em `supabase_migrations.schema_migrations`. O histórico de execuções aparece no GitHub em *Environments → producao*.
+- As migrations precisam ser **compatíveis com a versão anterior** do código (por exemplo, adicionar coluna antes de usá-la), porque a Vercel e o job do banco rodam em paralelo.
+
+### Configuração (feita uma vez)
+
+1. **Supabase**, em *Authentication → URL Configuration*:
+   - **Site URL**: `https://<app>.vercel.app`
+   - **Redirect URLs**: `https://<app>.vercel.app/**` e `https://*-daviribeirodosanjos-projects.vercel.app/**` (previews)
+2. **Vercel**: projeto importado do GitHub, com as variáveis `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. Não cadastre `SUPABASE_SECRET_KEY`.
+3. **GitHub**, em *Settings → Environments → producao*:
+   - variable `SUPABASE_PROJECT_REF`: id do projeto Supabase
+   - secret `SUPABASE_ACCESS_TOKEN`: token criado em supabase.com → *Account → Access Tokens*
+   - secret `SUPABASE_DB_PASSWORD`: senha do banco (*Project Settings → Database*)
+4. Crie a sua conta no sistema publicado e torne-a administradora pelo **SQL Editor** do Supabase:
    ```sql
    insert into administradores select id from auth.users where email = 'seu@email.com';
    ```
